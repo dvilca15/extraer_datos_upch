@@ -29,7 +29,7 @@ class PDFDataModel:
         self.extracted_data = []
     
     def extract_text_from_pdf(self, pdf_path):
-        """Extrae texto de las primeras páginas y última página del PDF"""
+        """Extrae texto de las primeras páginas y últimas 3 páginas del PDF"""
         try:
             doc = fitz.open(pdf_path)
             text = ""
@@ -39,11 +39,16 @@ class PDFDataModel:
                 page = doc[page_num]
                 text += page.get_text() + "\n\n"
             
-            # Extraer texto de la ÚLTIMA página para el nivel de riesgo
+            # Extraer texto de las ÚLTIMAS 3 PÁGINAS para el nivel de riesgo
             if len(doc) > 0:
-                last_page = doc[-1]
-                text += "\n\n=== ÚLTIMA PÁGINA ===\n\n"
-                text += last_page.get_text()
+                text += "\n\n=== ÚLTIMAS 3 PÁGINAS ===\n\n"
+                # Calcular desde qué página empezar (antepenúltima)
+                start_page = max(0, len(doc) - 3)
+                
+                for page_num in range(start_page, len(doc)):
+                    page = doc[page_num]
+                    text += f"\n--- Página {page_num + 1} ---\n"
+                    text += page.get_text() + "\n"
             
             doc.close()
             return text
@@ -64,8 +69,8 @@ class PDFDataModel:
         if nombre_match:
             data['nombres'] = nombre_match.group(1).strip()
         
-        # Extraer DNI (8 dígitos)
-        dni_match = re.search(r'DNI\s*:?\s*(\d{8})', text, re.IGNORECASE)
+        # Extraer DNI (cualquier secuencia de dígitos)
+        dni_match = re.search(r'DNI\s*:?\s*(\d+)', text, re.IGNORECASE)
         if dni_match:
             data['dni'] = dni_match.group(1).strip()
         
